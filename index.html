@@ -516,51 +516,37 @@
  initParticles();
  animateParticles();
 
- // --- 调用AI生成描述 ---
- async function getAIDescription(projectName, projectUrl) {
- try {
- // 调用Cloudflare Worker
- const response = await fetch('https://portfolio.xinyu8152011.workers.dev/', {
- method: 'POST',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify({ projectName, projectUrl })
- });
- const data = await response.json();
- return data.description || null;
- } catch (e) {
- console.log('AI描述获取失败:', e);
- return null;
- }
- }
+ // --- 配置文件：在这里添加项目 ---
+ const PROJECTS_CONFIG = [
+   {
+     name: 'CozyPrice 腾讯云版',
+     desc: '工业零件价格查询系统',
+     url: 'https://chachaer815.github.io/cozyprice-app/',
+     category: 'tools',
+     icon: '🏭'
+   },
+   {
+     name: 'CozyXinxin 预览台',
+     desc: 'CozyXinxin 预览台',
+     url: 'https://chachaer815.github.io/yuyuer/CozyXinxin/',
+     category: 'demo',
+     icon: '💖'
+   },
+   {
+     name: '火锅计算器',
+     desc: '火锅计算器',
+     url: 'https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/',
+     category: 'demo',
+     icon: '🍲'
+   }
+ ];
 
  // --- 初始化 ---
  async function init() {
  loading.classList.remove('hidden');
- let fetchedProjects = await fetchProjects();
  
- // 为每个新项目调用AI获取描述
- for (const proj of fetchedProjects) {
- // 检查是否已经在默认列表里
- const isDefault = DEFAULT_PROJECTS.some(p => p.url === proj.url);
- if (!isDefault) {
- const aiDesc = await getAIDescription(proj.name, proj.url);
- if (aiDesc) {
- proj.desc = aiDesc;
- }
- }
- }
- 
- // 优先使用 DEFAULT_PROJECTS，然后合并API获取到的（去重）
- allProjects = [...DEFAULT_PROJECTS];
- 
- // 添加API获取到的项目（去重）
- const seen = new Set(DEFAULT_PROJECTS.map(p => p.url));
- for (const p of fetchedProjects) {
- if (!seen.has(p.url)) {
- allProjects.push(p);
- seen.add(p.url);
- }
- }
+ // 直接使用配置文件
+ allProjects = PROJECTS_CONFIG;
  
  loading.classList.add('hidden');
  renderCards();
