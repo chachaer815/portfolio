@@ -525,17 +525,16 @@
  loading.classList.remove('hidden');
  const fetchedProjects = await fetchProjects();
  
- // 如果API获取到的项目少于默认列表，使用默认列表
- if (fetchedProjects.length < DEFAULT_PROJECTS.length) {
- allProjects = [...DEFAULT_PROJECTS, ...fetchedProjects];
- // 去重
- const seen = new Set();
- allProjects = allProjects.filter(p => {
- const key = p.url;
- return seen.has(key) ? false : seen.add(key);
- });
- } else {
- allProjects = fetchedProjects;
+ // 优先使用 DEFAULT_PROJECTS，然后合并API获取到的（去重）
+ allProjects = [...DEFAULT_PROJECTS];
+ 
+ // 添加API获取到的项目（去重）
+ const seen = new Set(DEFAULT_PROJECTS.map(p => p.url));
+ for (const p of fetchedProjects) {
+ if (!seen.has(p.url)) {
+ allProjects.push(p);
+ seen.add(p.url);
+ }
  }
  
  loading.classList.add('hidden');
