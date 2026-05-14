@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "name": "CozyPrice - Industrial Parts Price Query System",
+    "desc": "CozyPrice - Industrial Parts Price Query System",
+    "url": "https://chachaer815.github.io/cozyprice-app/",
+    "icon": "🏭"
+  },
+  {
+    "name": "CozyXinxin",
+    "desc": "CozyXinxin",
+    "url": "https://chachaer815.github.io/yuyuer/CozyXinxin/",
+    "icon": "💖"
+  },
+  {
+    "name": "zhufugui-huoguo-calculator",
+    "desc": "zhufugui-huoguo-calculator",
+    "url": "https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/",
+    "icon": "🍲"
+  }
+]
