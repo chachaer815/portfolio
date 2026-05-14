@@ -204,6 +204,34 @@
  const GITHUB_USERNAME = 'chachaer815';
  let allProjects = [];
 
+ // --- 默认项目列表（如果API获取失败或未找到时显示） ---
+ const DEFAULT_PROJECTS = [
+   {
+     name: 'CozyPrice 腾讯云版',
+     desc: '工业零件价格查询系统',
+     url: 'https://chachaer815.github.io/cozyprice-app/',
+     category: 'tools',
+     icon: '🏭',
+     mood: '工业零件价格查询系统上线啦 🏭'
+   },
+   {
+     name: 'CozyXinxin 预览台',
+     desc: 'CozyXinxin 预览台',
+     url: 'https://chachaer815.github.io/yuyuer/CozyXinxin/',
+     category: 'demo',
+     icon: '💖',
+     mood: '预览台更新完成 ✨'
+   },
+   {
+     name: '周富贵火锅计算器',
+     desc: '周富贵火锅计算器',
+     url: 'https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/',
+     category: 'demo',
+     icon: '🍲',
+     mood: '火锅天下第一 🍲'
+   }
+ ];
+
  // --- 主题切换 ---
  const themeToggle = document.getElementById('theme-toggle');
  const iconSun = '<i class="fas fa-sun"></i>';
@@ -495,7 +523,21 @@
  // --- 初始化 ---
  async function init() {
  loading.classList.remove('hidden');
- allProjects = await fetchProjects();
+ const fetchedProjects = await fetchProjects();
+ 
+ // 如果API获取到的项目少于默认列表，使用默认列表
+ if (fetchedProjects.length < DEFAULT_PROJECTS.length) {
+ allProjects = [...DEFAULT_PROJECTS, ...fetchedProjects];
+ // 去重
+ const seen = new Set();
+ allProjects = allProjects.filter(p => {
+ const key = p.url;
+ return seen.has(key) ? false : seen.add(key);
+ });
+ } else {
+ allProjects = fetchedProjects;
+ }
+ 
  loading.classList.add('hidden');
  renderCards();
  }
