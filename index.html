@@ -147,33 +147,7 @@
  </main>
 
  <script>
- // --- 项目配置：在这里添加新项目 ---
- const projects = [
- {
- name: 'CozyPrice 腾讯云版',
- desc: '工业零件价格查询系统',
- url: 'https://chachaer815.github.io/cozyprice-app/',
- category: 'tools',
- icon: '🏭',
- mood: '工业零件查询系统上线啦 🏭'
- },
- {
- name: 'CozyXinxin 预览台',
- desc: 'CozyXinxin 预览台',
- url: 'https://chachaer815.github.io/yuyuer/CozyXinxin/',
- category: 'demo',
- icon: '💖',
- mood: '预览台更新完成 ✨'
- },
- {
- name: '火锅计算器',
- desc: '火锅计算器',
- url: 'https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/',
- category: 'demo',
- icon: '🍲',
- mood: '火锅天下第一 🍲'
- }
- ];
+ let allProjects = [];
 
  // --- 主题切换 ---
  const themeToggle = document.getElementById('theme-toggle');
@@ -267,8 +241,18 @@
  initParticles();
  animateParticles();
 
- // --- 初始化 ---
+ // --- 初始化：从 projects.json 读取 ---
+ fetch('projects.json')
+ .then(res => res.json())
+ .then(data => {
+ allProjects = data;
  renderCards();
+ })
+ .catch(err => {
+ console.log('读取配置文件失败，使用默认', err);
+ allProjects = projects;
+ renderCards();
+ });
  </script>
 </body>
 </html>
