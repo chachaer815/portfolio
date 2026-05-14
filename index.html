@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>丸子の数字花园</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+ <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+
+ <style>
+ :root {
+ --bg-color: #fdfbf7;
+ --text-color: #3d3d3d;
+ --accent-color: #e07a5f;
+ }
+ .dark {
+ --bg-color: #1a1a2e;
+ --text-color: #e0e0e0;
+ --accent-color: #f67280;
+ }
+ body {
+ font-family: 'Noto Sans SC', sans-serif;
+ background-color: var(--bg-color);
+ color: var(--text-color);
+ transition: background-color 0.5s ease, color 0.5s ease;
+ }
+ .font-handwriting { font-family: 'Ma Shan Zheng', cursive; }
+
+ /* 氛围灯效果 */
+ .ambient-light {
+ position: fixed;
+ top: -50%;
+ left: -50%;
+ width: 200%;
+ height: 200%;
+ background: radial-gradient(circle at 30% 30%, rgba(224, 122, 95, 0.1) 0%, transparent 50%),
+ radial-gradient(circle at 70% 70%, rgba(247, 183, 49, 0.08) 0%, transparent 50%);
+ z-index: -1;
+ animation: moveLight 20s infinite alternate ease-in-out;
+ }
+ @keyframes moveLight {
+ 0% { transform: translate(0, 0); }
+ 100% { transform: translate(10%, 10%); }
+ }
+
+ /* 手账贴纸风格卡片 */
+ .sticker-card {
+ background: var(--bg-color);
+ border: 1.5px solid rgba(0,0,0,0.1);
+ box-shadow: 8px 8px 0px rgba(0,0,0,0.08);
+ transition: all 0.3s cubic-bezier(.25,.46,.45,.94);
+ transform-style: preserve-3d;
+ perspective: 1000px;
+ cursor: pointer;
+ }
+ .sticker-card:hover {
+ transform: translateY(-5px) rotateX(5deg) rotateY(5deg);
+ box-shadow: 12px 12px 0px rgba(0,0,0,0.12);
+ }
+ .tape {
+ position: absolute;
+ top: -15px;
+ left: 50%;
+ transform: translateX(-50%) rotate(-5deg);
+ width: 60px;
+ height: 30px;
+ background: rgba(255,255,255,0.7);
+ border: 1px dashed rgba(0,0,0,0.2);
+ z-index: 10;
+ }
+ .dark .tape { background: rgba(255,255,255,0.1); }
+
+ /* 心情便签 */
+ .mood-note {
+ position: absolute;
+ bottom: 10px;
+ right: 10px;
+ padding: 4px 8px;
+ background: #fffacd;
+ color: #333;
+ font-size: 12px;
+ transform: rotate(3deg);
+ box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+ opacity: 0;
+ transition: opacity 0.3s;
+ }
+ .sticker-card:hover .mood-note { opacity: 1; }
+
+ /* 打字机效果 */
+ .typewriter::after {
+ content: '|';
+ animation: blink 1s infinite;
+ }
+ @keyframes blink {
+ 0%, 100% { opacity: 1; }
+ 50% { opacity: 0; }
+ }
+
+ /* 粒子特效 */
+ #particle-canvas {
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ z-index: -2;
+ opacity: 0.6;
+ }
+
+ /* 加载动画 */
+ .loading-spinner {
+ border: 3px solid rgba(0,0,0,0.1);
+ border-left-color: var(--accent-color);
+ border-radius: 50%;
+ width: 30px;
+ height: 30px;
+ animation: spin 1s linear infinite;
+ }
+ @keyframes spin {
+ to { transform: rotate(360deg); }
+ }
+ .dark .loading-spinner {
+ border-color: rgba(255,255,255,0.1);
+ border-left-color: var(--accent-color);
+ }
+ </style>
+</head>
+<body class="min-h-screen">
+ <canvas id="particle-canvas"></canvas>
+ <div class="ambient-light"></div>
+
+ <!-- Header -->
+ <header class="sticky top-0 z-50 backdrop-blur-md" style="background-color: rgba(var(--bg-color-rgb), 0.8);">
+ <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+ <div class="flex items-center space-x-3">
+ <i class="fas fa-seedling text-2xl" style="color: var(--accent-color);"></i>
+ <span class="font-handwriting text-2xl">丸子の数字花园</span>
+ </div>
+ <div class="flex items-center space-x-4">
+ <a href="https://github.com/chachaer815" target="_blank" class="text-xl hover:scale-110 transition-transform" style="color: var(--accent-color);">
+ <i class="fab fa-github"></i>
+ </a>
+ <span id="clock" class="text-sm hidden md:block"></span>
+ <button id="theme-toggle" class="w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 transition-transform" style="background-color: var(--accent-color); color: white;">
+ <i class="fas fa-moon"></i>
+ </button>
+ </div>
+ </div>
+ </header>
+
+ <main class="container mx-auto px-4 sm:px-6 pb-20">
+ <!-- Hero Section: 给自己的话 -->
+ <section class="py-16 text-center">
+ <h1 class="font-handwriting text-5xl md:text-7xl mb-4" style="color: var(--accent-color);">你好呀，丸子。</h1>
+ <p class="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+ 这里是你的代码宇宙。不必讨好谁，只需记录下那些闪闪发光的灵感。今天一共收集了 <span id="project-count" class="font-bold" style="color: var(--accent-color);">0</span> 个小世界～
+ </p>
+ <div class="mt-8 inline-block p-4 border-l-4 border-accent-color bg-gray-50 dark:bg-gray-800/50 italic">
+ <p id="daily-quote" class="typewriter"></p>
+ </div>
+ </section>
+
+ <!-- 搜索框 -->
+ <section class="mb-8">
+ <div class="max-w-md mx-auto">
+ <div class="relative">
+ <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+ <input type="text" id="search-input" placeholder="搜索项目..." 
+ class="w-full pl-12 pr-4 py-3 rounded-full border-2 border-gray-200 dark:border-gray-700 focus:border-accent-color focus:outline-none transition"
+ style="background-color: var(--bg-color); color: var(--text-color);">
+ </div>
+ </div>
+ </section>
+
+ <!-- Interactive Filter: 心情筛选 -->
+ <section class="mb-12">
+ <div class="flex justify-center flex-wrap gap-3">
+ <button class="filter-btn px-5 py-2 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-accent-color hover:text-accent-color transition active" data-filter="all">全部</button>
+ <button class="filter-btn px-5 py-2 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-accent-color hover:text-accent-color transition" data-filter="tools">🛠️ 实用工具</button>
+ <button class="filter-btn px-5 py-2 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-accent-color hover:text-accent-color transition" data-filter="demo">🎮 演示Demo</button>
+ <button class="filter-btn px-5 py-2 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-accent-color hover:text-accent-color transition" data-filter="project">📁 项目作品</button>
+ </div>
+ </section>
+
+ <!-- 加载状态 -->
+ <div id="loading" class="flex justify-center py-12">
+ <div class="loading-spinner"></div>
+ </div>
+
+ <!-- Projects Grid: 手账风格 -->
+ <section id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+ <!-- Cards are generated by JS -->
+ </section>
+
+ <!-- 无项目提示 -->
+ <div id="no-projects" class="text-center py-12 hidden">
+ <p class="text-gray-500 dark:text-gray-400">还没有找到项目呢～</p>
+ </div>
+ </main>
+
+ <script>
+ // --- 配置：GitHub 用户名 ---
+ const GITHUB_USERNAME = 'chachaer815';
+ let allProjects = [];
+
+ // --- 主题切换 ---
+ const themeToggle = document.getElementById('theme-toggle');
+ const iconSun = '<i class="fas fa-sun"></i>';
+ const iconMoon = '<i class="fas fa-moon"></i>';
+
+ function applyTheme(theme) {
+ if (theme === 'dark') {
+ document.documentElement.classList.add('dark');
+ themeToggle.innerHTML = iconSun;
+ } else {
+ document.documentElement.classList.remove('dark');
+ themeToggle.innerHTML = iconMoon;
+ }
+ }
+ themeToggle.addEventListener('click', () => {
+ const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+ localStorage.setItem('theme', newTheme);
+ applyTheme(newTheme);
+ });
+ applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+ // --- 时钟 ---
+ const clockEl = document.getElementById('clock');
+ function updateClock() {
+ const now = new Date();
+ clockEl.textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+ }
+ setInterval(updateClock, 1000);
+ updateClock();
+
+ // --- 打字机语录 ---
+ const quotes = [
+ "代码写得好，bug 少，才是真的酷。",
+ "今天也要做一个快乐的开发者呀！",
+ "别焦虑，慢慢来，比较快。",
+ "咖啡续命，代码续魂。"
+ ];
+ const quoteEl = document.getElementById('daily-quote');
+ let quoteIndex = 0;
+ let charIndex = 0;
+ function typeWriter() {
+ if (charIndex < quotes[quoteIndex].length) {
+ quoteEl.textContent += quotes[quoteIndex].charAt(charIndex);
+ charIndex++;
+ setTimeout(typeWriter, 100);
+ } else {
+ setTimeout(() => {
+ quoteEl.textContent = '';
+ charIndex = 0;
+ quoteIndex = (quoteIndex + 1) % quotes.length;
+ typeWriter();
+ }, 3000);
+ }
+ }
+ typeWriter();
+
+ // --- 从 GitHub 获取项目列表 ---
+ async function fetchProjects() {
+ try {
+ // 获取用户的仓库
+ const reposResponse = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`);
+ const repos = await reposResponse.json();
+
+ const projects = [];
+
+ // 1. 检查每个仓库是否有 GitHub Pages
+ for (const repo of repos) {
+ if (repo.has_pages) {
+ const url = `https://${GITHUB_USERNAME}.github.io/${repo.name}/`;
+ projects.push({
+ name: repo.name,
+ desc: repo.description || '丸子的项目',
+ url: url,
+ category: 'project',
+ icon: getIconForRepo(repo.name),
+ mood: getMoodForRepo(repo.name)
+ });
+ }
+ }
+
+ // 2. 检查 yuyuer 仓库的子目录（子项目）
+ try {
+ const yuyuerResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/yuyuer/contents`);
+ const yuyuerContents = await yuyuerResponse.json();
+
+ for (const item of yuyuerContents) {
+ if (item.type === 'dir' && item.name !== '.github') {
+ const url = `https://${GITHUB_USERNAME}.github.io/yuyuer/${item.name}/`;
+ // 检查目录是否有 index.html
+ try {
+ const dirResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/yuyuer/contents/${item.name}`);
+ const dirContents = await dirResponse.json();
+ const hasIndex = dirContents.some(f => f.name === 'index.html' || f.name.endsWith('.html'));
+ 
+ if (hasIndex) {
+ projects.push({
+ name: formatProjectName(item.name),
+ desc: getDescForProject(item.name),
+ url: url,
+ category: getCategoryForProject(item.name),
+ icon: getIconForRepo(item.name),
+ mood: getMoodForRepo(item.name)
+ });
+ }
+ } catch (e) {
+ console.log('检查目录失败:', item.name);
+ }
+ }
+ }
+ } catch (e) {
+ console.log('获取 yuyuer 子目录失败:', e);
+ }
+
+ return projects;
+ } catch (error) {
+ console.error('获取项目失败:', error);
+ return [];
+ }
+ }
+
+ // --- 根据项目名获取图标 ---
+ function getIconForRepo(name) {
+ const icons = {
+ 'cozyprice': '🏭',
+ 'cozyxinxin': '💖',
+ 'zhufugui': '🍲',
+ 'yuyuer': '🌸',
+ 'demo': '🎮',
+ 'tool': '🛠️'
+ };
+ const lowerName = name.toLowerCase();
+ for (const key of Object.keys(icons)) {
+ if (lowerName.includes(key)) return icons[key];
+ }
+ return '📦';
+ }
+
+ // --- 根据项目名获取描述 ---
+ function getDescForProject(name) {
+ const descs = {
+ 'cozyprice': '工业零件价格查询系统',
+ 'cozyxinxin': 'CozyXinxin 预览台',
+ 'zhufugui': '周富贵火锅计算器',
+ 'yuyuer': 'AI 辅助网页部署仓库'
+ };
+ const lowerName = name.toLowerCase();
+ for (const key of Object.keys(descs)) {
+ if (lowerName.includes(key)) return descs[key];
+ }
+ return '丸子的项目';
+ }
+
+ // --- 根据项目名获取心情 ---
+ function getMoodForRepo(name) {
+ const moods = {
+ 'cozyprice': '工业零件价格查询系统上线啦 🏭',
+ 'cozyxinxin': '预览台更新完成 ✨',
+ 'zhufugui': '火锅天下第一 🍲',
+ 'yuyuer': '持续部署中 🚀'
+ };
+ const lowerName = name.toLowerCase();
+ for (const key of Object.keys(moods)) {
+ if (lowerName.includes(key)) return moods[key];
+ }
+ return '新项目上线啦 🎉';
+ }
+
+ // --- 根据项目名获取分类 ---
+ function getCategoryForProject(name) {
+ const categories = {
+ 'cozyprice': 'tools',
+ 'cozyxinxin': 'demo',
+ 'zhufugui': 'demo',
+ 'yuyuer': 'tools'
+ };
+ const lowerName = name.toLowerCase();
+ for (const key of Object.keys(categories)) {
+ if (lowerName.includes(key)) return categories[key];
+ }
+ return 'project';
+ }
+
+ // --- 格式化项目名 ---
+ function formatProjectName(name) {
+ // 把短横线分隔转成空格，首字母大写
+ return name.split('-').map(word => 
+ word.charAt(0).toUpperCase() + word.slice(1)
+ ).join(' ');
+ }
+
+ // --- 渲染卡片 ---
+ const grid = document.getElementById('projects-grid');
+ const loading = document.getElementById('loading');
+ const noProjects = document.getElementById('no-projects');
+ const projectCount = document.getElementById('project-count');
+
+ function renderCards(filter = 'all', searchTerm = '') {
+ grid.innerHTML = '';
+ 
+ let filtered = allProjects;
+ 
+ // 筛选
+ if (filter !== 'all') {
+ filtered = filtered.filter(p => p.category === filter);
+ }
+ 
+ // 搜索
+ if (searchTerm) {
+ const term = searchTerm.toLowerCase();
+ filtered = filtered.filter(p => 
+ p.name.toLowerCase().includes(term) || 
+ p.desc.toLowerCase().includes(term)
+ );
+ }
+
+ if (filtered.length === 0) {
+ noProjects.classList.remove('hidden');
+ } else {
+ noProjects.classList.add('hidden');
+ filtered.forEach((proj, index) => {
+ const card = document.createElement('a');
+ card.href = proj.url;
+ card.target = '_blank';
+ card.className = 'sticker-card relative rounded-3xl p-6 block';
+ card.style.animationDelay = `${index * 0.1}s`;
+ card.innerHTML = `
+ <div class="tape"></div>
+ <div class="text-5xl mb-4">${proj.icon}</div>
+ <h3 class="font-handwriting text-3xl mb-2" style="color: var(--accent-color);">${proj.name}</h3>
+ <p class="text-gray-600 dark:text-gray-400 mb-4">${proj.desc}</p>
+ <div class="mood-note">${proj.mood}</div>
+ `;
+ grid.appendChild(card);
+ });
+ }
+
+ projectCount.textContent = allProjects.length;
+ }
+
+ // --- 筛选器 ---
+ document.querySelectorAll('.filter-btn').forEach(btn => {
+ btn.addEventListener('click', () => {
+ document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', '!border-accent-color', '!text-accent-color'));
+ btn.classList.add('active', '!border-accent-color', '!text-accent-color');
+ renderCards(btn.dataset.filter, document.getElementById('search-input').value);
+ });
+ });
+
+ // --- 搜索 ---
+ document.getElementById('search-input').addEventListener('input', (e) => {
+ const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+ renderCards(activeFilter, e.target.value);
+ });
+
+ // --- 背景粒子 (柔和版) ---
+ const canvas = document.getElementById('particle-canvas');
+ const ctx = canvas.getContext('2d');
+ let particles = [];
+ function initParticles() {
+ canvas.width = window.innerWidth;
+ canvas.height = window.innerHeight;
+ particles = Array.from({ length: 50 }, () => ({
+ x: Math.random() * canvas.width,
+ y: Math.random() * canvas.height,
+ r: Math.random() * 2 + 1,
+ dx: Math.random() * 0.5 - 0.25,
+ dy: Math.random() * 0.5 - 0.25
+ }));
+ }
+ function animateParticles() {
+ ctx.clearRect(0, 0, canvas.width, canvas.height);
+ const isDark = document.documentElement.classList.contains('dark');
+ ctx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)';
+ particles.forEach(p => {
+ ctx.beginPath();
+ ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+ ctx.fill();
+ p.x += p.dx;
+ p.y += p.dy;
+ if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+ if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+ });
+ requestAnimationFrame(animateParticles);
+ }
+ window.addEventListener('resize', initParticles);
+ initParticles();
+ animateParticles();
+
+ // --- 初始化 ---
+ async function init() {
+ loading.classList.remove('hidden');
+ allProjects = await fetchProjects();
+ loading.classList.add('hidden');
+ renderCards();
+ }
+ init();
+ </script>
+</body>
+</html>
