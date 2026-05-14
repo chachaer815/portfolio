@@ -519,7 +519,8 @@
  // --- 调用AI生成描述 ---
  async function getAIDescription(projectName, projectUrl) {
  try {
- const response = await fetch('/api/describe', {
+ // 调用Cloudflare Worker
+ const response = await fetch('https://portfolio.xinyu8152011.workers.dev/', {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
  body: JSON.stringify({ projectName, projectUrl })
