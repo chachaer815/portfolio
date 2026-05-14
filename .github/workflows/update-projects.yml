@@ -24,6 +24,15 @@ jobs:
           python3 << 'PYEOF'
           import json, urllib.request, urllib.error, os
 
+          def api_request(url):
+              """带认证头的 GitHub API 请求"""
+              req = urllib.request.Request(url, headers={
+                  "User-Agent": "portfolio-auto-update",
+                  "Authorization": f"token {os.environ.get('GH_TOKEN', '')}"
+              })
+              with urllib.request.urlopen(req) as r:
+                  return json.loads(r.read())
+
           USERNAME = "chachaer815"
           projects = []
 
