@@ -1,0 +1,20 @@
+[
+  {
+    "name": "CozyPrice 腾讯云版",
+    "desc": "工业零件价格查询系统",
+    "url": "https://chachaer815.github.io/cozyprice-app/",
+    "icon": "🏭"
+  },
+  {
+    "name": "CozyXinxin 预览台",
+    "desc": "CozyXinxin 预览台",
+    "url": "https://chachaer815.github.io/yuyuer/CozyXinxin/",
+    "icon": "💖"
+  },
+  {
+    "name": "火锅计算器",
+    "desc": "火锅计算器",
+    "url": "https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/",
+    "icon": "🍲"
+  }
+]
