@@ -1,0 +1,67 @@
+name: Auto Update Projects
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+  push:
+    branches:
+      - main
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate projects.json
+        run: |
+          GITHUB_USERNAME="chachaer815"
+          
+          # 获取所有有Pages的仓库
+          REPOS=$(curl -s "https://api.github.com/users/$GITHUB_USERNAME/repos?per_page=100" | \
+            jq -r '.[] | select(.has_pages == true) | .name')
+          
+          echo '[' > projects.json
+          FIRST=true
+          
+          for REPO in $REPOS; do
+            if [ "$REPO" = "portfolio" ]; then continue; fi
+            
+            URL="https://$GITHUB_USERNAME.github.io/$REPO/"
+            DESC=$(curl -s "https://api.github.com/repos/$GITHUB_USERNAME/$REPO" | jq -r '.description // "丸子的项目"')
+            
+            # 选择图标
+            ICON="📦"
+            if echo "$REPO" | grep -qi "cozyprice"; then ICON="🏭"; fi
+            if echo "$REPO" | grep -qi "cozyxinxin"; then ICON="💖"; fi
+            if echo "$REPO" | grep -qi "cozy"; then ICON="🏭"; fi
+            if echo "$REPO" | grep -qi "yuyuer"; then ICON="🌸"; fi
+            if echo "$REPO" | grep -qi "zhufugui\|huoguo\|hotpot"; then ICON="🍲"; fi
+            if echo "$REPO" | grep -qi "demo\|test"; then ICON="🎮"; fi
+            if echo "$REPO" | grep -qi "tool\|util"; then ICON="🛠️"; fi
+            
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              echo ',' >> projects.json
+            fi
+            
+            echo "  {" >> projects.json
+            echo "    \"name\": \"$REPO\"," >> projects.json
+            echo "    \"desc\": \"$DESC\"," >> projects.json
+            echo "    \"url\": \"$URL\"," >> projects.json
+            echo "    \"icon\": \"$ICON\"" >> projects.json
+            echo -n "  }" >> projects.json
+          done
+          
+          echo '' >> projects.json
+          echo ']' >> projects.json
+          
+          cat projects.json
+      
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto update projects"
+          file_pattern: projects.json
