@@ -291,14 +291,16 @@
  // --- 从 GitHub 获取项目列表 ---
  async function fetchProjects() {
  try {
- // 获取用户的仓库
+ const projects = [];
+
+ // 1. 检查每个仓库是否有 GitHub Pages（根目录）
  const reposResponse = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`);
  const repos = await reposResponse.json();
 
- const projects = [];
-
- // 1. 检查每个仓库是否有 GitHub Pages
  for (const repo of repos) {
+ // 跳过 portfolio 本身
+ if (repo.name === 'portfolio') continue;
+ 
  if (repo.has_pages) {
  const url = `https://${GITHUB_USERNAME}.github.io/${repo.name}/`;
  projects.push({
@@ -309,40 +311,34 @@
  icon: getIconForRepo(repo.name),
  mood: getMoodForRepo(repo.name)
  });
- }
- }
-
- // 2. 检查 yuyuer 仓库的子目录（子项目）
+ 
+ // 检查这个仓库的子目录
  try {
- const yuyuerResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/yuyuer/contents`);
- const yuyuerContents = await yuyuerResponse.json();
-
- for (const item of yuyuerContents) {
- if (item.type === 'dir' && item.name !== '.github') {
- const url = `https://${GITHUB_USERNAME}.github.io/yuyuer/${item.name}/`;
- // 检查目录是否有 index.html
+ const contentsResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/contents`);
+ const contents = await contentsResponse.json();
+ 
+ for (const item of contents) {
+ if (item.type === 'dir' && !item.name.startsWith('.') && item.name !== 'node_modules') {
+ const subUrl = `https://${GITHUB_USERNAME}.github.io/${repo.name}/${item.name}/`;
  try {
- const dirResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/yuyuer/contents/${item.name}`);
- const dirContents = await dirResponse.json();
- const hasIndex = dirContents.some(f => f.name === 'index.html' || f.name.endsWith('.html'));
+ const subContents = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/contents/${item.name}`).then(r => r.json());
+ const hasIndex = subContents.some(f => f.name === 'index.html' || f.name.endsWith('.html'));
  
  if (hasIndex) {
  projects.push({
  name: formatProjectName(item.name),
  desc: getDescForProject(item.name),
- url: url,
+ url: subUrl,
  category: getCategoryForProject(item.name),
  icon: getIconForRepo(item.name),
  mood: getMoodForRepo(item.name)
  });
  }
- } catch (e) {
- console.log('检查目录失败:', item.name);
+ } catch(e) {}
  }
  }
+ } catch(e) {}
  }
- } catch (e) {
- console.log('获取 yuyuer 子目录失败:', e);
  }
 
  return projects;
