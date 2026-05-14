@@ -147,9 +147,33 @@
  </main>
 
  <script>
- let allProjects = [];
+ // --- 项目列表 ---
+ const allProjects = [
+ {
+ name: 'CozyPrice 腾讯云版',
+ desc: '工业零件价格查询系统',
+ url: 'https://chachaer815.github.io/cozyprice-app/',
+ icon: '🏭',
+ category: 'tools'
+ },
+ {
+ name: 'CozyXinxin 预览台',
+ desc: 'CozyXinxin 预览台',
+ url: 'https://chachaer815.github.io/yuyuer/CozyXinxin/',
+ icon: '💖',
+ category: 'demo'
+ },
+ {
+ name: '火锅计算器',
+ desc: '火锅计算器',
+ url: 'https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/',
+ icon: '🍲',
+ category: 'demo'
+ }
+ ];
 
- // --- 主题切换 ---
+ // --- 初始化 ---
+ renderCards();
  const themeToggle = document.getElementById('theme-toggle');
  function applyTheme(theme) {
  if (theme === 'dark') {
@@ -180,7 +204,7 @@
  const grid = document.getElementById('projects-grid');
  function renderCards(filter = 'all') {
  grid.innerHTML = '';
- const filtered = filter === 'all' ? projects : projects.filter(p => p.category === filter);
+ const filtered = filter === 'all' ? allProjects : allProjects.filter(p => p.category === filter);
  filtered.forEach((proj, index) => {
  const card = document.createElement('a');
  card.href = proj.url;
@@ -241,18 +265,8 @@
  initParticles();
  animateParticles();
 
- // --- 初始化：从 projects.json 读取 ---
- fetch('projects.json')
- .then(res => res.json())
- .then(data => {
- allProjects = data;
+ // --- 初始化 ---
  renderCards();
- })
- .catch(err => {
- console.log('读取配置文件失败，使用默认', err);
- allProjects = projects;
- renderCards();
- });
  </script>
 </body>
 </html>
