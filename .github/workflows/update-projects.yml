@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 << 'PYEOF'
-          import json, urllib.request, urllib.error
+          import json, urllib.request, urllib.error, os
 
           USERNAME = "chachaer815"
           projects = []
@@ -37,8 +37,7 @@ jobs:
 
           # 获取所有公开仓库
           url = f"https://api.github.com/users/{USERNAME}/repos?per_page=100&type=public"
-          with urllib.request.urlopen(url) as r:
-              repos = json.loads(r.read())
+          repos = api_request(url)
 
           for repo in repos:
               repo_name = repo["name"]
@@ -48,8 +47,7 @@ jobs:
               # 检查是否开了 Pages
               pages_url = f"https://api.github.com/repos/{USERNAME}/{repo_name}/pages"
               try:
-                  with urllib.request.urlopen(pages_url) as r:
-                      pages_info = json.loads(r.read())
+                  pages_info = api_request(pages_url)
                   pages_branch = pages_info["source"]["branch"]
                   pages_path = pages_info["source"]["path"].strip("/")
               except:
@@ -58,8 +56,7 @@ jobs:
               # 获取 Pages 分支根目录内容
               contents_url = f"https://api.github.com/repos/{USERNAME}/{repo_name}/contents/{pages_path}?ref={pages_branch}"
               try:
-                  with urllib.request.urlopen(contents_url) as r:
-                      contents = json.loads(r.read())
+                  contents = api_request(contents_url)
               except urllib.error.HTTPError:
                   continue
 
