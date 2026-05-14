@@ -516,10 +516,38 @@
  initParticles();
  animateParticles();
 
+ // --- 调用AI生成描述 ---
+ async function getAIDescription(projectName, projectUrl) {
+ try {
+ const response = await fetch('/api/describe', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ projectName, projectUrl })
+ });
+ const data = await response.json();
+ return data.description || null;
+ } catch (e) {
+ console.log('AI描述获取失败:', e);
+ return null;
+ }
+ }
+
  // --- 初始化 ---
  async function init() {
  loading.classList.remove('hidden');
- const fetchedProjects = await fetchProjects();
+ let fetchedProjects = await fetchProjects();
+ 
+ // 为每个新项目调用AI获取描述
+ for (const proj of fetchedProjects) {
+ // 检查是否已经在默认列表里
+ const isDefault = DEFAULT_PROJECTS.some(p => p.url === proj.url);
+ if (!isDefault) {
+ const aiDesc = await getAIDescription(proj.name, proj.url);
+ if (aiDesc) {
+ proj.desc = aiDesc;
+ }
+ }
+ }
  
  // 优先使用 DEFAULT_PROJECTS，然后合并API获取到的（去重）
  allProjects = [...DEFAULT_PROJECTS];
