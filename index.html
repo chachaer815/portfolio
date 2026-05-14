@@ -224,7 +224,7 @@
    },
    {
      name: '火锅计算器',
-     desc: '火锅计算器',
+     desc: '周富贵火锅计算器',
      url: 'https://chachaer815.github.io/yuyuer/zhufugui-huoguo-calculator/',
      category: 'demo',
      icon: '🍲',
@@ -291,16 +291,14 @@
  // --- 从 GitHub 获取项目列表 ---
  async function fetchProjects() {
  try {
- const projects = [];
-
- // 1. 检查每个仓库是否有 GitHub Pages（根目录）
+ // 获取用户的仓库
  const reposResponse = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`);
  const repos = await reposResponse.json();
 
+ const projects = [];
+
+ // 1. 检查每个仓库是否有 GitHub Pages
  for (const repo of repos) {
- // 跳过 portfolio 本身
- if (repo.name === 'portfolio') continue;
- 
  if (repo.has_pages) {
  const url = `https://${GITHUB_USERNAME}.github.io/${repo.name}/`;
  projects.push({
@@ -311,34 +309,40 @@
  icon: getIconForRepo(repo.name),
  mood: getMoodForRepo(repo.name)
  });
- 
- // 检查这个仓库的子目录
+ }
+ }
+
+ // 2. 检查 yuyuer 仓库的子目录（子项目）
  try {
- const contentsResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/contents`);
- const contents = await contentsResponse.json();
- 
- for (const item of contents) {
- if (item.type === 'dir' && !item.name.startsWith('.') && item.name !== 'node_modules') {
- const subUrl = `https://${GITHUB_USERNAME}.github.io/${repo.name}/${item.name}/`;
+ const yuyuerResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/yuyuer/contents`);
+ const yuyuerContents = await yuyuerResponse.json();
+
+ for (const item of yuyuerContents) {
+ if (item.type === 'dir' && item.name !== '.github') {
+ const url = `https://${GITHUB_USERNAME}.github.io/yuyuer/${item.name}/`;
+ // 检查目录是否有 index.html
  try {
- const subContents = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/contents/${item.name}`).then(r => r.json());
- const hasIndex = subContents.some(f => f.name === 'index.html' || f.name.endsWith('.html'));
+ const dirResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/yuyuer/contents/${item.name}`);
+ const dirContents = await dirResponse.json();
+ const hasIndex = dirContents.some(f => f.name === 'index.html' || f.name.endsWith('.html'));
  
  if (hasIndex) {
  projects.push({
  name: formatProjectName(item.name),
  desc: getDescForProject(item.name),
- url: subUrl,
+ url: url,
  category: getCategoryForProject(item.name),
  icon: getIconForRepo(item.name),
  mood: getMoodForRepo(item.name)
  });
  }
- } catch(e) {}
+ } catch (e) {
+ console.log('检查目录失败:', item.name);
  }
  }
- } catch(e) {}
  }
+ } catch (e) {
+ console.log('获取 yuyuer 子目录失败:', e);
  }
 
  return projects;
@@ -370,7 +374,7 @@
  const descs = {
  'cozyprice': '工业零件价格查询系统',
  'cozyxinxin': 'CozyXinxin 预览台',
- 'zhufugui': '火锅计算器',
+ 'zhufugui': '周富贵火锅计算器',
  'yuyuer': 'AI 辅助网页部署仓库'
  };
  const lowerName = name.toLowerCase();
@@ -516,38 +520,10 @@
  initParticles();
  animateParticles();
 
- // --- 调用AI生成描述 ---
- async function getAIDescription(projectName, projectUrl) {
- try {
- const response = await fetch('/api/describe', {
- method: 'POST',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify({ projectName, projectUrl })
- });
- const data = await response.json();
- return data.description || null;
- } catch (e) {
- console.log('AI描述获取失败:', e);
- return null;
- }
- }
-
  // --- 初始化 ---
  async function init() {
  loading.classList.remove('hidden');
- let fetchedProjects = await fetchProjects();
- 
- // 为每个新项目调用AI获取描述
- for (const proj of fetchedProjects) {
- // 检查是否已经在默认列表里
- const isDefault = DEFAULT_PROJECTS.some(p => p.url === proj.url);
- if (!isDefault) {
- const aiDesc = await getAIDescription(proj.name, proj.url);
- if (aiDesc) {
- proj.desc = aiDesc;
- }
- }
- }
+ const fetchedProjects = await fetchProjects();
  
  // 优先使用 DEFAULT_PROJECTS，然后合并API获取到的（去重）
  allProjects = [...DEFAULT_PROJECTS];
