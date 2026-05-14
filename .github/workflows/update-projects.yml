@@ -13,54 +13,84 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Generate projects.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          GITHUB_USERNAME="chachaer815"
-          
-          # 获取所有有Pages的仓库
-          REPOS=$(curl -s "https://api.github.com/users/$GITHUB_USERNAME/repos?per_page=100" | \
-            jq -r '.[] | select(.has_pages == true) | .name')
-          
-          echo '[' > projects.json
-          FIRST=true
-          
-          for REPO in $REPOS; do
-            if [ "$REPO" = "portfolio" ]; then continue; fi
-            
-            URL="https://$GITHUB_USERNAME.github.io/$REPO/"
-            DESC=$(curl -s "https://api.github.com/repos/$GITHUB_USERNAME/$REPO" | jq -r '.description // "丸子的项目"')
-            
-            # 选择图标
-            ICON="📦"
-            if echo "$REPO" | grep -qi "cozyprice"; then ICON="🏭"; fi
-            if echo "$REPO" | grep -qi "cozyxinxin"; then ICON="💖"; fi
-            if echo "$REPO" | grep -qi "cozy"; then ICON="🏭"; fi
-            if echo "$REPO" | grep -qi "yuyuer"; then ICON="🌸"; fi
-            if echo "$REPO" | grep -qi "zhufugui\|huoguo\|hotpot"; then ICON="🍲"; fi
-            if echo "$REPO" | grep -qi "demo\|test"; then ICON="🎮"; fi
-            if echo "$REPO" | grep -qi "tool\|util"; then ICON="🛠️"; fi
-            
-            if [ "$FIRST" = true ]; then
-              FIRST=false
-            else
-              echo ',' >> projects.json
-            fi
-            
-            echo "  {" >> projects.json
-            echo "    \"name\": \"$REPO\"," >> projects.json
-            echo "    \"desc\": \"$DESC\"," >> projects.json
-            echo "    \"url\": \"$URL\"," >> projects.json
-            echo "    \"icon\": \"$ICON\"" >> projects.json
-            echo -n "  }" >> projects.json
-          done
-          
-          echo '' >> projects.json
-          echo ']' >> projects.json
-          
-          cat projects.json
-      
-      - name: Commit
+          python3 << 'PYEOF'
+          import json, urllib.request, urllib.error
+
+          USERNAME = "chachaer815"
+          projects = []
+
+          def get_icon(name):
+              n = name.lower()
+              if "cozyprice" in n: return "\U0001F3ED"
+              if "cozyxinxin" in n: return "\U0001F496"
+              if "zhufugui" in n or "huoguo" in n or "hotpot" in n: return "\U0001F372"
+              if "xinxin" in n: return "\U0001F496"
+              return "\U0001F4E6"
+
+          # 获取所有公开仓库
+          url = f"https://api.github.com/users/{USERNAME}/repos?per_page=100&type=public"
+          with urllib.request.urlopen(url) as r:
+              repos = json.loads(r.read())
+
+          for repo in repos:
+              repo_name = repo["name"]
+              if repo_name == "portfolio":
+                  continue
+
+              # 检查是否开了 Pages
+              pages_url = f"https://api.github.com/repos/{USERNAME}/{repo_name}/pages"
+              try:
+                  with urllib.request.urlopen(pages_url) as r:
+                      pages_info = json.loads(r.read())
+                  pages_branch = pages_info["source"]["branch"]
+                  pages_path = pages_info["source"]["path"].strip("/")
+              except:
+                  continue  # 没开 Pages，跳过
+
+              # 获取 Pages 分支根目录内容
+              contents_url = f"https://api.github.com/repos/{USERNAME}/{repo_name}/contents/{pages_path}?ref={pages_branch}"
+              try:
+                  with urllib.request.urlopen(contents_url) as r:
+                      contents = json.loads(r.read())
+              except urllib.error.HTTPError:
+                  continue
+
+              # 找出子目录（每个子目录 = 一个项目）
+              subdirs = [i for i in contents if i["type"] == "dir" and i["name"] != ".github"]
+
+              if not subdirs:
+                  # 没有子目录，整个仓库是一个项目
+                  projects.append({
+                      "name": repo.get("description") or repo_name,
+                      "desc": repo.get("description") or "丸子的项目",
+                      "url": f"https://{USERNAME}.github.io/{repo_name}/",
+                      "icon": get_icon(repo_name)
+                  })
+              else:
+                  # 有子目录，每个子目录单独作为一个项目
+                  for d in subdirs:
+                      dname = d["name"]
+                      # 尝试读取子目录里的 meta.json（如果存在）
+                      projects.append({
+                          "name": dname,
+                          "desc": dname,
+                          "url": f"https://{USERNAME}.github.io/{repo_name}/{dname}/",
+                          "icon": get_icon(dname)
+                      })
+
+          with open("projects.json", "w", encoding="utf-8") as f:
+              json.dump(projects, f, ensure_ascii=False, indent=2)
+
+          print("Generated projects.json:")
+          print(json.dumps(projects, ensure_ascii=False, indent=2))
+          PYEOF
+
+      - name: Commit & Push
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto update projects"
