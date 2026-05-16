@@ -87,34 +87,22 @@
  }
  .sticker-card:hover .mood-note { opacity: 1; }
 
- /* 泡泡光标 */
+ /* 泡泡光标 - 跟手灵敏版 */
  .bubble-cursor {
  position: fixed;
- width: 24px;
- height: 24px;
- border: 2px solid rgba(100, 200, 255, 0.6);
+ width: 30px;
+ height: 30px;
  border-radius: 50%;
  pointer-events: none;
  z-index: 9999;
- transition: transform 0.15s ease-out, width 0.3s, height 0.3s, border-color 0.3s;
  transform: translate(-50%, -50%);
- background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(100, 200, 255, 0.2));
- box-shadow: 0 0 10px rgba(100, 200, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.5);
+ background: radial-gradient(circle, #00eaff, transparent 70%);
+ transition: width 0.2s, height 0.2s, background 0.2s;
  }
  .bubble-cursor.hover-project {
- width: 40px;
- height: 40px;
- border-color: rgba(255, 150, 200, 0.8);
- background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 150, 200, 0.3));
- box-shadow: 0 0 20px rgba(255, 150, 200, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.6);
- }
- .bubble-cursor.click-anim {
- animation: bubblePop 0.4s ease-out;
- }
- @keyframes bubblePop {
- 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
- 50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.7; }
- 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+ width: 50px;
+ height: 50px;
+ background: radial-gradient(circle, #ff69b4, transparent 70%);
  }
  * { cursor: none !important; }
 
@@ -562,22 +550,11 @@
 
  // --- 泡泡光标 ---
  const bubbleCursor = document.getElementById('bubble-cursor');
- let mouseX = 0, mouseY = 0;
- let cursorX = 0, cursorY = 0;
  
  document.addEventListener('mousemove', (e) => {
- mouseX = e.clientX;
- mouseY = e.clientY;
+ bubbleCursor.style.left = e.clientX + 'px';
+ bubbleCursor.style.top = e.clientY + 'px';
  });
- 
- function animateCursor() {
- cursorX += (mouseX - cursorX) * 0.15;
- cursorY += (mouseY - cursorY) * 0.15;
- bubbleCursor.style.left = cursorX + 'px';
- bubbleCursor.style.top = cursorY + 'px';
- requestAnimationFrame(animateCursor);
- }
- animateCursor();
  
  // 检测悬停在项目上
  document.addEventListener('mouseover', (e) => {
