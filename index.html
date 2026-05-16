@@ -87,6 +87,37 @@
  }
  .sticker-card:hover .mood-note { opacity: 1; }
 
+ /* 泡泡光标 */
+ .bubble-cursor {
+ position: fixed;
+ width: 24px;
+ height: 24px;
+ border: 2px solid rgba(100, 200, 255, 0.6);
+ border-radius: 50%;
+ pointer-events: none;
+ z-index: 9999;
+ transition: transform 0.15s ease-out, width 0.3s, height 0.3s, border-color 0.3s;
+ transform: translate(-50%, -50%);
+ background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(100, 200, 255, 0.2));
+ box-shadow: 0 0 10px rgba(100, 200, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.5);
+ }
+ .bubble-cursor.hover-project {
+ width: 40px;
+ height: 40px;
+ border-color: rgba(255, 150, 200, 0.8);
+ background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 150, 200, 0.3));
+ box-shadow: 0 0 20px rgba(255, 150, 200, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.6);
+ }
+ .bubble-cursor.click-anim {
+ animation: bubblePop 0.4s ease-out;
+ }
+ @keyframes bubblePop {
+ 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+ 50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.7; }
+ 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+ }
+ * { cursor: none !important; }
+
  /* 打字机效果 */
  .typewriter::after {
  content: '|';
@@ -127,6 +158,7 @@
  </style>
 </head>
 <body class="min-h-screen">
+ <div class="bubble-cursor" id="bubble-cursor"></div>
  <canvas id="particle-canvas"></canvas>
  <div class="ambient-light"></div>
 
@@ -527,6 +559,43 @@
  window.addEventListener('resize', initParticles);
  initParticles();
  animateParticles();
+
+ // --- 泡泡光标 ---
+ const bubbleCursor = document.getElementById('bubble-cursor');
+ let mouseX = 0, mouseY = 0;
+ let cursorX = 0, cursorY = 0;
+ 
+ document.addEventListener('mousemove', (e) => {
+ mouseX = e.clientX;
+ mouseY = e.clientY;
+ });
+ 
+ function animateCursor() {
+ cursorX += (mouseX - cursorX) * 0.15;
+ cursorY += (mouseY - cursorY) * 0.15;
+ bubbleCursor.style.left = cursorX + 'px';
+ bubbleCursor.style.top = cursorY + 'px';
+ requestAnimationFrame(animateCursor);
+ }
+ animateCursor();
+ 
+ // 检测悬停在项目上
+ document.addEventListener('mouseover', (e) => {
+ const card = e.target.closest('.sticker-card');
+ if (card) {
+ bubbleCursor.classList.add('hover-project');
+ } else {
+ bubbleCursor.classList.remove('hover-project');
+ }
+ });
+ 
+ // 点击泡泡破裂
+ document.addEventListener('click', () => {
+ bubbleCursor.classList.add('click-anim');
+ setTimeout(() => {
+ bubbleCursor.classList.remove('click-anim');
+ }, 400);
+ });
 
  // --- 初始化 ---
  async function init() {
